@@ -1,0 +1,66 @@
+name: 월간 첫방문UV 리포트 추출
+
+on:
+  schedule:
+    # 매월 2일 10:17 KST (01:17 UTC) — 말일 데이터의 BigQuery 일일 내보내기 지연을 고려해 2일 실행
+    - cron: "17 1 2 * *"
+  workflow_dispatch:
+    inputs:
+      month:
+        description: "추출할 월 (YYYY-MM, 비우면 지난달)"
+        required: false
+        default: ""
+      allow_partial:
+        description: "미완성 월도 강제 추출"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monthly-report
+  cancel-in-progress: false
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: GCP 인증 (서비스 계정)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 의존성 설치
+        run: pip install google-cloud-bigquery
+
+      - name: BigQuery 추출
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            ARGS="${{ github.event.inputs.month }}"
+          fi
+          if [ "${{ github.event.inputs.allow_partial }}" = "true" ]; then
+            ARGS="$ARGS --allow-partial"
+          fi
+          python scripts/extract_monthly.py $ARGS
+
+      - name: 결과 커밋 & 푸시 (Cloudflare Pages 자동 배포 트리거)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/
+          if git diff --cached --quiet; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git commit -m "data: 월간 첫방문UV 리포트 갱신 ($(date +'%Y-%m-%d %H:%M' -d '+9 hours') KST)"
+            git push
+          fi

@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>첫방문UV 월간 리포트</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='8' width='3.5' height='7' rx='1' fill='%232a78d6'/%3E%3Crect x='6' y='4' width='3.5' height='11' rx='1' fill='%23eb6834'/%3E%3Crect x='11' y='1' width='3.5' height='14' rx='1' fill='%231baf7a'/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100;
+  --c5:#e87ba4; --c6:#008300; --c7:#4a3aa7; --c8:#e34948;
+}
+:root:not([data-theme="light"]){ }
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,.10);
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500;
+    --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,.10);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500;
+  --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 16px 48px}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:20px 0 4px}
+h1{font-size:19px;margin:0;font-weight:700}
+h1 small{font-weight:400;color:var(--ink2);font-size:13px;margin-left:8px}
+.spacer{flex:1}
+select,button,input[type=search]{
+  background:var(--surface);color:var(--ink);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;font:inherit}
+button{cursor:pointer}
+button:hover{border-color:var(--muted)}
+.badge{font-size:12px;color:var(--ink2);border:1px solid var(--border);
+  border-radius:999px;padding:2px 10px}
+.badge.warn{color:#b05a00;border-color:#b05a00}
+.meta{color:var(--muted);font-size:12px;margin:2px 0 16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0 20px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.tile .lbl{color:var(--ink2);font-size:12px}
+.tile .val{font-size:26px;font-weight:700;margin-top:2px}
+.tile .sub{color:var(--muted);font-size:12px;margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-bottom:20px}
+.card h2{font-size:14px;margin:0 0 2px;font-weight:600}
+.card .desc{color:var(--muted);font-size:12px;margin:0 0 12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 2px}
+.legend button{display:flex;align-items:center;gap:6px;border:none;background:none;
+  padding:2px 0;color:var(--ink2);font-size:12px}
+.legend button.off{opacity:.35}
+.chip{width:10px;height:10px;border-radius:3px;display:inline-block}
+#chart{width:100%;display:block}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--ink);
+  border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:10;display:none;max-width:260px}
+.tip b{font-size:12px}
+.tip .row{display:flex;align-items:center;gap:6px;margin-top:2px}
+.tip .row .n{margin-left:auto;font-variant-numeric:tabular-nums;padding-left:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--grid)}
+th{color:var(--ink2);font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;user-select:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.bar-cell{display:flex;align-items:center;gap:8px}
+.bar-cell .bar{height:8px;border-radius:4px;min-width:2px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.toolbar .count{color:var(--muted);font-size:12px;margin-left:auto}
+.pager{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:12px;color:var(--ink2);font-size:13px}
+#empty{padding:60px 0;text-align:center;color:var(--muted)}
+@media (max-width:640px){ th,td{padding:6px 6px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>첫방문UV 월간 리포트<small>GA4 · 맞춤채널(운영) · 신규 사용자 세션</small></h1>
+    <div class="spacer"></div>
+    <select id="monthSel" aria-label="월 선택"></select>
+    <button id="csvBtn" title="현재 월의 상세 데이터를 CSV로 내려받기">CSV 다운로드</button>
+    <button id="themeBtn" title="라이트/다크 전환">◐</button>
+  </header>
+  <div class="meta" id="meta"></div>
+
+  <div id="empty" hidden>아직 추출된 월 데이터가 없습니다.<br>
+    GitHub Actions의 <b>월간 첫방문UV 리포트 추출</b> 워크플로를 실행하면 이곳에 표시됩니다.</div>
+
+  <div id="content" hidden>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">월 총 사용자 (중복 제거)</div><div class="val" id="kTotal">–</div><div class="sub" id="kMonth"></div></div>
+      <div class="tile"><div class="lbl">일평균 사용자</div><div class="val" id="kAvg">–</div><div class="sub" id="kDays"></div></div>
+      <div class="tile"><div class="lbl">최대 일자</div><div class="val" id="kPeak">–</div><div class="sub" id="kPeakDate"></div></div>
+      <div class="tile"><div class="lbl">1위 채널</div><div class="val" id="kTopCh" style="font-size:18px">–</div><div class="sub" id="kTopShare"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>일자별 첫방문 UV (채널 누적)</h2>
+      <p class="desc">막대에 마우스를 올리면 일자별 채널 상세를 볼 수 있습니다. 범례를 눌러 채널을 켜고 끌 수 있습니다.</p>
+      <svg id="chart" height="300" role="img" aria-label="일자별 채널 누적 막대 차트"></svg>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="card">
+      <h2>채널 요약</h2>
+      <p class="desc">월 전체 기준 채널별 총 사용자(채널 내 중복 제거)와 비중입니다.</p>
+      <table id="chTable"><thead><tr>
+        <th>맞춤채널(운영)</th><th class="num">총 사용자</th><th style="width:45%">비중</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card">
+      <h2>상세 데이터 <span style="font-weight:400;color:var(--muted)">(GA4 탐색 리포트와 동일 구조)</span></h2>
+      <p class="desc">날짜 × 맞춤채널(운영) × 세션 소스/매체 × 총 사용자</p>
+      <div class="toolbar">
+        <select id="chFilter"><option value="">전체 채널</option></select>
+        <input type="search" id="smSearch" placeholder="소스/매체 검색…">
+        <span class="count" id="rowCount"></span>
+      </div>
+      <table id="detail"><thead><tr>
+        <th data-k="date">날짜 ▲</th><th data-k="channel">맞춤채널(운영)</th>
+        <th data-k="source_medium">세션 소스/매체</th><th class="num" data-k="users">총 사용자</th>
+      </tr></thead><tbody></tbody></table>
+      <div class="pager">
+        <button id="prevPg">이전</button><span id="pgInfo"></span><button id="nextPg">다음</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+const CHANNELS = ["직접유입(Direct)","검색광고","브랜드검색광고","자연유입","배너광고","추천유입","메세지광고","Unassigned"];
+const SLOT = {}; CHANNELS.forEach((c,i)=>SLOT[c]="--c"+(i+1));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const color = ch => css(SLOT[ch] || "--c8");
+const fmt = n => (n==null?"–":Number(n).toLocaleString("ko-KR"));
+const dstr = d => `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+
+let cur = null;                 // 현재 월 데이터
+let hidden = new Set();         // 범례로 끈 채널
+let sortKey = "date", sortAsc = true, page = 1;
+const PAGE = 100;
+
+/* ---------- 테마 ---------- */
+document.getElementById("themeBtn").onclick = () => {
+  const r = document.documentElement;
+  const curDark = r.dataset.theme === "dark" ||
+    (!r.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  r.dataset.theme = curDark ? "light" : "dark";
+  if (cur) { drawChart(); drawChannelTable(); }
+};
+
+/* ---------- 로드 ---------- */
+async function boot(){
+  let idx;
+  try{
+    idx = await (await fetch("data/index.json", {cache:"no-cache"})).json();
+  }catch(e){ idx = {months:[]}; }
+  const months = idx.months || [];
+  const sel = document.getElementById("monthSel");
+  sel.innerHTML = months.map(m=>`<option value="${m}">${m.replace("-","년 ")}월</option>`).join("");
+  if(!months.length){
+    document.getElementById("empty").hidden = false;
+    return;
+  }
+  sel.onchange = () => loadMonth(sel.value);
+  await loadMonth(months[0]);
+}
+
+async function loadMonth(m){
+  cur = await (await fetch(`data/${m}.json`, {cache:"no-cache"})).json();
+  hidden.clear(); page = 1; sortKey="date"; sortAsc=true;
+  document.getElementById("content").hidden = false;
+  document.getElementById("empty").hidden = true;
+  const metaEl = document.getElementById("meta");
+  metaEl.innerHTML =
+    `데이터 원본: BigQuery <code>${cur.source}</code> · 생성 ${cur.generated_at?.replace("T"," ").slice(0,16)}` +
+    (cur.partial ? ` <span class="badge warn">⚠ 미완성 월 (수집 ${cur.days_available}일)</span>` : "");
+  drawKpis(); drawChart(); drawLegend(); drawChannelTable(); initDetail();
+}
+
+/* ---------- KPI ---------- */
+function drawKpis(){
+  const bd = cur.by_date;
+  document.getElementById("kTotal").textContent = fmt(cur.total_users);
+  document.getElementById("kMonth").textContent = cur.month;
+  const avg = bd.length ? Math.round(bd.reduce((s,r)=>s+r.users,0)/bd.length) : 0;
+  document.getElementById("kAvg").textContent = fmt(avg);
+  document.getElementById("kDays").textContent = `${bd.length}일 기준`;
+  const peak = bd.reduce((a,b)=>b.users>a.users?b:a, {users:-1});
+  document.getElementById("kPeak").textContent = fmt(peak.users);
+  document.getElementById("kPeakDate").textContent = peak.date ? dstr(peak.date) : "";
+  const top = (cur.by_channel||[])[0] ?
+    cur.by_channel.reduce((a,b)=>b.users>a.users?b:a) : null;
+  document.getElementById("kTopCh").textContent = top ? top.channel : "–";
+  document.getElementById("kTopShare").textContent =
+    top && cur.total_users ? `${(100*top.users/cur.total_users).toFixed(1)}%` : "";
+}
+
+/* ---------- 차트 ---------- */
+function drawChart(){
+  const svg = document.getElementById("chart");
+  const W = svg.clientWidth || 900, H = 300, mL=56, mR=8, mT=10, mB=26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const days = [...new Set(cur.by_date_channel.map(r=>r.date))].sort();
+  const byDay = {};
+  days.forEach(d=>byDay[d]={});
+  cur.by_date_channel.forEach(r=>{ byDay[r.date][r.channel]=r.users; });
+  const active = CHANNELS.filter(c=>!hidden.has(c));
+  const totals = days.map(d=>active.reduce((s,c)=>s+(byDay[d][c]||0),0));
+  const maxV = Math.max(1, ...totals);
+  const niceMax = niceCeil(maxV);
+  const iw = W-mL-mR, ih = H-mT-mB;
+  const bw = Math.max(3, Math.min(34, iw/days.length - 3));
+  const x = i => mL + (iw/days.length)*(i+0.5);
+  const y = v => mT + ih*(1 - v/niceMax);
+  let s = "";
+  // 그리드(4틱) + y라벨
+  for(let t=0;t<=4;t++){
+    const v = niceMax*t/4, yy = y(v);
+    s += `<line x1="${mL}" y1="${yy}" x2="${W-mR}" y2="${yy}" stroke="${t?css('--grid'):css('--baseline')}" stroke-width="1"/>`;
+    s += `<text x="${mL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="${css('--muted')}">${fmt(v)}</text>`;
+  }
+  // x라벨 (일) — 혼잡 방지 간격
+  const step = Math.ceil(days.length/10);
+  days.forEach((d,i)=>{
+    if(i%step===0) s += `<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${+d.slice(6,8)}일</text>`;
+  });
+  // 누적 막대 (세그먼트 사이 2px 표면 간격, 데이터 끝 4px 라운드)
+  days.forEach((d,i)=>{
+    let acc = 0;
+    const segs = active.map(c=>({c, v: byDay[d][c]||0})).filter(o=>o.v>0);
+    segs.forEach((o,si)=>{
+      const y1 = y(acc+o.v), y0 = y(acc);
+      const hpx = Math.max(1, y0-y1 - (si<segs.length-1?2:0));
+      const top = si===segs.length-1;
+      const r = top ? 4 : 0;
+      s += `<path d="${roundedTop(x(i)-bw/2, y1, bw, hpx, r)}" fill="${color(o.c)}" data-day="${d}" data-i="${i}"/>`;
+      acc += o.v;
+    });
+    // 히트 타깃(막대보다 큰 투명 영역)
+    s += `<rect x="${x(i)-(iw/days.length)/2}" y="${mT}" width="${iw/days.length}" height="${ih}" fill="transparent" data-day="${d}"/>`;
+  });
+  svg.innerHTML = s;
+  // 호버 툴팁
+  const tip = document.getElementById("tip");
+  svg.onmousemove = e => {
+    const t = e.target.getAttribute && e.target.getAttribute("data-day");
+    if(!t){ tip.style.display="none"; return; }
+    const rows = active.map(c=>({c, v: byDay[t][c]||0})).filter(o=>o.v>0)
+                 .sort((a,b)=>b.v-a.v);
+    const tot = rows.reduce((s,o)=>s+o.v,0);
+    tip.innerHTML = `<b>${dstr(t)}</b>` +
+      rows.map(o=>`<div class="row"><span class="chip" style="background:${color(o.c)}"></span>${o.c}<span class="n">${fmt(o.v)}</span></div>`).join("") +
+      `<div class="row" style="border-top:1px solid ${css('--grid')};margin-top:4px;padding-top:4px"><b>합계</b><span class="n"><b>${fmt(tot)}</b></span></div>`;
+    tip.style.display="block";
+    const vw = innerWidth, tw = tip.offsetWidth;
+    tip.style.left = Math.min(e.clientX+14, vw-tw-10)+"px";
+    tip.style.top = Math.max(8, e.clientY-10-tip.offsetHeight/2)+"px";
+  };
+  svg.onmouseleave = () => tip.style.display="none";
+}
+function roundedTop(x,y,w,h,r){
+  r = Math.min(r, h, w/2);
+  return `M${x},${y+h} L${x},${y+r} Q${x},${y} ${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h} Z`;
+}
+function niceCeil(v){
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for(const m of [1,2,2.5,4,5,8,10]) if(m*p>=v) return m*p;
+  return 10*p;
+}
+
+/* ---------- 범례 ---------- */
+function drawLegend(){
+  const el = document.getElementById("legend");
+  const present = new Set(cur.by_date_channel.map(r=>r.channel));
+  el.innerHTML = "";
+  CHANNELS.filter(c=>present.has(c)).forEach(c=>{
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="chip" style="background:${color(c)}"></span>${c}`;
+    b.className = hidden.has(c) ? "off" : "";
+    b.onclick = () => { hidden.has(c)?hidden.delete(c):hidden.add(c);
+      b.className = hidden.has(c)?"off":""; drawChart(); };
+    el.appendChild(b);
+  });
+}
+
+/* ---------- 채널 요약 ---------- */
+function drawChannelTable(){
+  const tb = document.querySelector("#chTable tbody");
+  const max = Math.max(1, ...cur.by_channel.map(r=>r.users));
+  tb.innerHTML = cur.by_channel.map(r=>{
+    const pct = cur.total_users ? (100*r.users/cur.total_users) : 0;
+    return `<tr><td><span class="chip" style="background:${color(r.channel)};margin-right:8px"></span>${r.channel}</td>
+      <td class="num">${fmt(r.users)}</td>
+      <td><div class="bar-cell"><div class="bar" style="width:${(100*r.users/max).toFixed(1)}%;background:${color(r.channel)}"></div><span style="color:var(--ink2);font-size:12px">${pct.toFixed(1)}%</span></div></td></tr>`;
+  }).join("");
+}
+
+/* ---------- 상세 테이블 ---------- */
+function initDetail(){
+  const chSel = document.getElementById("chFilter");
+  const present = [...new Set(cur.rows.map(r=>r.channel))];
+  chSel.innerHTML = `<option value="">전체 채널</option>` +
+    CHANNELS.filter(c=>present.includes(c)).map(c=>`<option>${c}</option>`).join("");
+  chSel.onchange = () => {page=1; drawDetail();};
+  document.getElementById("smSearch").oninput = () => {page=1; drawDetail();};
+  document.querySelectorAll("#detail th").forEach(th=>{
+    th.onclick = () => {
+      const k = th.dataset.k;
+      if(sortKey===k) sortAsc=!sortAsc; else {sortKey=k; sortAsc = k!=="users";}
+      page=1; drawDetail();
+    };
+  });
+  document.getElementById("prevPg").onclick = ()=>{ if(page>1){page--; drawDetail();} };
+  document.getElementById("nextPg").onclick = ()=>{ page++; drawDetail(); };
+  drawDetail();
+}
+function filteredRows(){
+  const ch = document.getElementById("chFilter").value;
+  const q = document.getElementById("smSearch").value.trim().toLowerCase();
+  let rows = cur.rows;
+  if(ch) rows = rows.filter(r=>r.channel===ch);
+  if(q) rows = rows.filter(r=>r.source_medium.toLowerCase().includes(q));
+  return [...rows].sort((a,b)=>{
+    const va=a[sortKey], vb=b[sortKey];
+    const c = typeof va==="number" ? va-vb : String(va).localeCompare(String(vb),"ko");
+    return sortAsc ? c : -c;
+  });
+}
+function drawDetail(){
+  const rows = filteredRows();
+  const pages = Math.max(1, Math.ceil(rows.length/PAGE));
+  page = Math.min(page, pages);
+  const slice = rows.slice((page-1)*PAGE, page*PAGE);
+  document.querySelector("#detail tbody").innerHTML = slice.map(r=>
+    `<tr><td>${dstr(r.date)}</td>
+     <td><span class="chip" style="background:${color(r.channel)};margin-right:8px"></span>${r.channel}</td>
+     <td>${esc(r.source_medium)}</td><td class="num">${fmt(r.users)}</td></tr>`).join("");
+  document.getElementById("rowCount").textContent = `${fmt(rows.length)}행`;
+  document.getElementById("pgInfo").textContent = `${page} / ${pages}`;
+  document.querySelectorAll("#detail th").forEach(th=>{
+    const base = th.textContent.replace(/[ ▲▼]+$/,"");
+    th.textContent = base + (th.dataset.k===sortKey ? (sortAsc?" ▲":" ▼") : "");
+  });
+}
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ---------- CSV ---------- */
+document.getElementById("csvBtn").onclick = () => {
+  if(!cur) return;
+  const head = "날짜,맞춤채널(운영),세션 소스/매체,총 사용자\n";
+  const body = cur.rows.map(r=>
+    [dstr(r.date), r.channel, `"${r.source_medium.replace(/"/g,'""')}"`, r.users].join(",")).join("\n");
+  const blob = new Blob(["﻿"+head+body], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `첫방문UV_${cur.month}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+
+addEventListener("resize", () => { if(cur) drawChart(); });
+boot();
+</script>
+</body>
+</html>

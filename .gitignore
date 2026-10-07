@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+# 서비스 계정 키는 절대 커밋 금지
+*.json.key
+sa-key*.json
+service-account*.json
