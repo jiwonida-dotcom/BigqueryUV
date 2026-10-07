@@ -1,7 +1,7 @@
 # 첫방문UV 월간 리포트 플랫폼
 
 GA4 탐색 리포트 **「첫방문UV (\*빅쿼리 생성용)」** 과 동일한 리포트를 BigQuery에서 월 단위로
-자동 추출해 Cloudflare Pages 대시보드로 제공합니다.
+자동 추출해 Cloudflare Workers 대시보드로 제공합니다.
 
 ```
 매월 2일 10:17 KST
@@ -11,7 +11,7 @@ GitHub Actions ──▶ BigQuery (uplusumobile.analytics_253244174)
 site/data/YYYY-MM.json 커밋/푸시
       │
       ▼
-Cloudflare Pages 자동 배포 ──▶ 월 선택 대시보드 (+ CSV 다운로드)
+Cloudflare Workers 자동 배포 ──▶ 월 선택 대시보드 (+ CSV 다운로드)
 ```
 
 ## 리포트 정의 (GA4 탐색과 동일하게 재현)
@@ -56,27 +56,31 @@ Cloudflare Pages 자동 배포 ──▶ 월 선택 대시보드 (+ CSV 다운�
 
 키 파일은 등록 후 로컬에서 삭제하고, 절대 리포에 커밋하지 마세요.
 
-### 3. Cloudflare Pages 연결
+### 3. Cloudflare Workers 연결 (정적 자산 배포)
 
-[Cloudflare 대시보드](https://dash.cloudflare.com) → **Workers & Pages → Create → Pages →
-Connect to Git** → `jiwonida-dotcom/BigqueryUV` 선택
+[Cloudflare 대시보드](https://dash.cloudflare.com) → **Workers & Pages → Create → Import a repository** → `jiwonida-dotcom/BigqueryUV` 선택
 
 | 설정 | 값 |
 |---|---|
+| Worker 이름 | `bigqueryuv`<br>※ `wrangler.jsonc` 의 `name` 과 일치 필수 |
 | Production branch | `main` |
-| Build command | (비움) |
-| Build output directory | `site` |
+| Build command | 비움 |
+| Deploy command | `npx wrangler deploy`<br>※ 배포 대상: `wrangler.jsonc` 의 `assets.directory` (`./site`) |
 
-이후 GitHub Actions가 데이터를 커밋할 때마다 자동으로 재배포됩니다.
+URL 활성화: Worker → **Settings → Domains & Routes** → `workers.dev` **Enable**
+※ 배포 주소: `https://bigqueryuv.<계정 서브도메인>.workers.dev`
+
+GitHub Actions 데이터 커밋 시 자동 재배포.
 
 ### 4. 접근 제한 (Cloudflare Access — 무료)
 
-사내 데이터이므로 공개 URL 노출을 막습니다.
+사내 데이터 보호 목적. 공개 URL 노출 차단.
 
-1. Cloudflare 대시보드 → **Zero Trust** (처음이면 무료 플랜 선택) → **Access → Applications → Add an application → Self-hosted**
-2. Application domain: Pages 도메인 (예: `bigqueryuv.pages.dev`) — `*.bigqueryuv.pages.dev` 와 프리뷰 도메인도 함께 추가 권장
-3. Policy: Action **Allow**, Include → **Emails / Emails ending in** 에 허용할 사내 이메일(또는 도메인) 입력
-4. 저장하면 접속 시 이메일 OTP 인증을 거칩니다.
+1. Worker → **Settings → Domains & Routes** → `workers.dev` 및 Preview URLs 행의 **Enable Cloudflare Access**
+2. 표시된 **Manage Cloudflare Access** 링크 → Zero Trust 정책 화면 이동
+3. Policy: Action **Allow**, Include → **Emails / Emails ending in** 에 허용 이메일(또는 도메인) 입력
+   ※ 기본 정책은 계정 소유자 이메일만 허용
+4. 접속 시 이메일 OTP 인증 적용
 
 ## 사용법
 
@@ -108,13 +112,14 @@ scripts/extract_monthly.py             # 추출 → site/data/*.json 생성
 site/index.html                        # 대시보드 (월 선택·차트·테이블·CSV)
 site/data/index.json                   # 추출된 월 목록
 site/data/YYYY-MM.json                 # 월별 데이터
+wrangler.jsonc                         # Cloudflare Workers 배포 설정
 ```
 
 ## 비용
 
 - BigQuery: 월 1회 쿼리, 일 0.75M 이벤트 기준 한 달 스캔량 수 GB 수준 → 무료 한도(월 1TB) 내
 - GitHub Actions: 월 1회 수 분 → 무료 한도 내
-- Cloudflare Pages / Access: 무료 플랜으로 충분
+- Cloudflare Workers(정적 자산) / Access: 무료 플랜으로 충분
 
 ## 코드 배포 (github-push.cmd)
 

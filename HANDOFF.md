@@ -9,11 +9,11 @@
 ## 1. 프로젝트 목표
 
 GA4 탐색 리포트 **「첫방문UV (\*빅쿼리 생성용)」** 과 동일한 리포트를 BigQuery에서
-**월 단위로 자동 추출**하고, **Cloudflare Pages** 대시보드로 제공한다.
+**월 단위로 자동 추출**하고, **Cloudflare Workers(정적 자산)** 대시보드로 제공한다.
 
 - GA4 속성: **U+유모바일_GA4** (`a52894037` / property `p253244174`)
 - 원본 탐색 리포트: `https://analytics.google.com/analytics/web/#/analysis/a52894037p253244174/edit/R85Ckl2LTqOfyb3MzobJnQ`
-- 배포: GitHub 리포 `https://github.com/jiwonida-dotcom/BigqueryUV` → Cloudflare Pages 자동 배포
+- 배포: GitHub 리포 `https://github.com/jiwonida-dotcom/BigqueryUV` → Cloudflare Workers 자동 배포
 
 ## 2. 확정된 아키텍처 (사용자 승인 완료)
 
@@ -25,7 +25,7 @@ GitHub Actions ──▶ BigQuery (uplusumobile.analytics_253244174)
 site/data/YYYY-MM.json + index.json 커밋/푸시
       │
       ▼
-Cloudflare Pages (출력 디렉토리 site, 빌드 명령 없음) ──▶ 월 선택 대시보드
+Cloudflare Workers (wrangler.jsonc, assets=./site) ──▶ 월 선택 대시보드
       └ Cloudflare Access 로 이메일 인증 접근 제한 (사용자 요구사항)
 ```
 
@@ -89,7 +89,7 @@ NULL 이면 `(direct) / (none)` 으로 처리. 세션 키는 `user_pseudo_id × 
 | `.github/workflows/monthly-report.yml` | 매월 2일 01:17 UTC 스케줄 + workflow_dispatch(month, allow_partial). `GCP_SA_KEY` 시크릿 사용, 결과 커밋/푸시 |
 | `site/index.html` | 단일 파일 대시보드: 월 선택, KPI 4종, 채널 누적 막대 차트(호버 툴팁·범례 토글), 채널 요약, 상세 테이블(필터·정렬·페이징), CSV 다운로드, 라이트/다크 |
 | `site/data/index.json` | 추출된 월 목록 (현재 빈 상태) |
-| `README.md` | 설정 가이드 (서비스 계정, Secrets, Pages, Access) |
+| `README.md` | 설정 가이드 (서비스 계정, Secrets, Workers, Access) |
 
 ## 6. 완료된 검증 (재검증 불필요)
 
@@ -107,7 +107,7 @@ NULL 이면 `(direct) / (none)` 으로 처리. 세션 키는 `user_pseudo_id × 
 3. [ ] GitHub Secrets에 `GCP_SA_KEY` 등록 (키 파일 내용 전체)
 4. [ ] Actions 수동 실행으로 **첫 실제 쿼리 검증**: month=`2026-08` → 결과 수치를 GA4 탐색과 대조 (±수% 차이는 정상, 아래 8번)
 5. [ ] 백필: `2026-09` 실행
-6. [ ] Cloudflare Pages 연결: Production branch `main`, 빌드 명령 없음, 출력 디렉토리 `site`
+6. [x] Cloudflare Workers 연결: Worker `bigqueryuv`, `wrangler.jsonc` 로 `site` 정적 자산 배포, workers.dev 활성화 필요
 7. [ ] Cloudflare Access(Zero Trust) 로 이메일 기반 접근 제한
 8. [ ] (선택) 탐색의 「기기」 탭 등 추가 리포트 확장, 웹페이지 고도화
 

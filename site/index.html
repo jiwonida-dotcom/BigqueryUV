@@ -141,7 +141,7 @@ tbody tr:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 
 <script>
 "use strict";
-const CHANNELS = ["직접유입(Direct)","검색광고","브랜드검색광고","자연유입","배너광고","추천유입","메세지광고","Unassigned"];
+const CHANNELS = ["직접유입(Direct)","검색광고","브랜드검색광고(bsa)","자연유입(Organic Search)","배너광고","추천유입(Referral)","메세지광고","Unassigned"];
 const SLOT = {}; CHANNELS.forEach((c,i)=>SLOT[c]="--c"+(i+1));
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const color = ch => css(SLOT[ch] || "--c8");

@@ -34,10 +34,10 @@ DATA_DIR = ROOT / "site" / "data"
 CHANNEL_ORDER = [
     "직접유입(Direct)",
     "검색광고",
-    "브랜드검색광고",
-    "자연유입",
+    "브랜드검색광고(bsa)",
+    "자연유입(Organic Search)",
     "배너광고",
-    "추천유입",
+    "추천유입(Referral)",
     "메세지광고",
     "Unassigned",
 ]

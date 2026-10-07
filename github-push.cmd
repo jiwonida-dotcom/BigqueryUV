@@ -264,7 +264,7 @@ echo ============================================
 echo  배포 완료: %VERSION%
 echo  저장소   : %REPO_WEB%
 echo  커밋 기록: %REPO_WEB%/commits/%BRANCH%
-echo  Cloudflare Pages 연결 시 1~2분 내 자동 배포
+echo  Cloudflare Workers 연결 시 1~2분 내 자동 배포
 echo ============================================
 goto :done
 
