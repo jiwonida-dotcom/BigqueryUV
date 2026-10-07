@@ -68,19 +68,20 @@ classified AS (
     session_date,
     CONCAT(src, ' / ', med) AS source_medium,
     -- 1순위: GA4가 계산해 준 맞춤채널(운영) 값. NULL일 때만 규칙 CASE 폴백.
+    -- 폴백 명칭은 GA 맞춤채널(운영) 명칭과 일치 필수 (배너광고·메세지광고·바이럴 명칭 미확인)
     COALESCE(
       ch,
       CASE
         WHEN src = '(direct)' AND med = '(none)'
           THEN '직접유입(Direct)'
         WHEN REGEXP_CONTAINS(src, r'(?i)^(brandsearch|BSA)$')
-          THEN '브랜드검색광고'
+          THEN '브랜드검색광고(bsa)'
         WHEN REGEXP_CONTAINS(src, r'(?i)^(SA|sa)$')
           OR REGEXP_CONTAINS(med, r'(?i)^cpc$')
           THEN '검색광고'
         WHEN REGEXP_CONTAINS(med, r'(?i)^organic$')
           OR REGEXP_CONTAINS(src, r'(?i)^(search\.zum\.com|m\.search\.daum|m\.search\.naver)$')
-          THEN '자연유입'
+          THEN '자연유입(Organic Search)'
         WHEN REGEXP_CONTAINS(med, r'(?i)^(kakao_message|0916_MGM|LMS)$')
           OR REGEXP_CONTAINS(src, r'(?i)^LMS$')
           THEN '메세지광고'
@@ -89,7 +90,7 @@ classified AS (
           THEN '배너광고'
         WHEN REGEXP_CONTAINS(med, r'(?i)^(referral|powercon|channel|video|tistoryblog|blog|powerblog|seo|상위노출)$')
           OR REGEXP_CONTAINS(src, r'(?i)^(viral|kakaoplus|wiggle|MOYO|moyo|checkplus|pay\.naver|xpay|inicis|recommend|mvnopartners|gswelfaremall|gs25|qrcode|me-qr|localhost|medialog)$')
-          THEN '추천유입'
+          THEN '추천유입(Referral)'
         WHEN REGEXP_CONTAINS(med, r'(?i)^viral$')
           THEN '바이럴'
         ELSE 'Unassigned'

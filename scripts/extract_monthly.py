@@ -31,16 +31,16 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SQL_PATH = ROOT / "sql" / "monthly_uv.sql"
 DATA_DIR = ROOT / "site" / "data"
 
-CHANNEL_ORDER = [
-    "직접유입(Direct)",
-    "검색광고",
-    "브랜드검색광고(bsa)",
-    "자연유입(Organic Search)",
-    "배너광고",
-    "추천유입(Referral)",
-    "메세지광고",
-    "Unassigned",
-]
+# 채널 정렬 기준: GA 맞춤채널(운영) 명칭 접두어 (접미어 변경에도 정렬 유지)
+CHANNEL_BASES = ["직접유입", "검색광고", "브랜드검색광고", "자연유입",
+                 "배너광고", "추천유입", "메세지광고", "Unassigned"]
+
+
+def channel_rank(ch: str) -> int:
+    for i, base in enumerate(CHANNEL_BASES):
+        if ch.startswith(base):
+            return i
+    return 99
 
 
 def month_range(month: str) -> tuple[str, str]:
@@ -112,8 +112,7 @@ def run(month: str, allow_partial: bool) -> None:
         elif r.level == "total":
             total_users = r.users
 
-    by_channel.sort(key=lambda x: CHANNEL_ORDER.index(x["channel"])
-                    if x["channel"] in CHANNEL_ORDER else 99)
+    by_channel.sort(key=lambda x: (channel_rank(x["channel"]), x["channel"]))
 
     out = {
         "month": month,
