@@ -182,6 +182,13 @@ th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;user-sel
 th.num,td.num{text-align:right}
 tbody tr:last-child td{border-bottom:0}
 tbody tr:hover{background:var(--hover)}
+/* 상세 테이블: 고정 열폭으로 행마다 동일한 정렬 유지 */
+#detail{table-layout:fixed;min-width:640px}
+#detail th:nth-child(1){width:108px}
+#detail th:nth-child(2){width:196px}
+#detail th:nth-child(4){width:104px}
+#detail td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#detail td.dt{font-variant-numeric:tabular-nums;color:var(--ink2)}
 .chn{display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;
   background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:3px 11px 3px 8px;
   font-size:12.5px;font-weight:600;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -195,6 +202,7 @@ tbody tr:hover{background:var(--hover)}
 .field:focus,.btn:focus-visible,.tab:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
 input.field{min-width:210px}
 .toolbar .count{color:var(--muted);font-size:12px;margin-left:auto}
+select.field.compact{height:32px;border-radius:9px;font-size:12.5px;color:var(--ink2)}
 .table-scroll{overflow-x:auto}
 .pager{display:flex;gap:5px;align-items:center;justify-content:center;margin-top:16px;color:var(--ink2);font-size:13px;flex-wrap:wrap}
 .pager .ell{color:var(--muted);padding:0 2px}
@@ -315,6 +323,10 @@ input.field{min-width:210px}
         <select class="field" id="chFilter" aria-label="채널 필터"><option value="">전체 채널</option></select>
         <input class="field" type="search" id="smSearch" placeholder="소스/매체 검색" aria-label="소스/매체 검색">
         <span class="count" id="rowCount"></span>
+        <select class="field compact" id="pgSize" aria-label="페이지당 행수">
+          <option value="20">20개씩</option><option value="50">50개씩</option>
+          <option value="100">100개씩</option><option value="all">전체 보기</option>
+        </select>
       </div>
       <div class="table-scroll">
       <table id="detail"><thead><tr>
@@ -361,7 +373,9 @@ const label = m => { const [y,mm] = m.split("-"); return {y, m: `${+mm}월`, ful
 let months = [], have = new Set(), sel = null;
 let cur = null, prev = null;
 let hidden = new Set(), sortKey = "date", sortAsc = true, page = 1;
-const PAGE = 25, cache = {};
+let PAGE = 20;                                       // 20 | 50 | 100 | "all"
+const cache = {};
+const pageSize = total => PAGE === "all" ? Math.max(1, total) : PAGE;
 
 /* ---------- 테마 ---------- */
 $("themeBtn").onclick = () => {
@@ -654,6 +668,14 @@ function initDetail(){
 }
 $("chFilter").onchange = () => {page=1; drawDetail();};
 $("smSearch").oninput = () => {page=1; drawDetail();};
+try{ const ps = localStorage.getItem("pageSize");
+  if(ps && ["20","50","100","all"].includes(ps)){ PAGE = ps==="all" ? "all" : +ps; $("pgSize").value = ps; } }catch(e){}
+$("pgSize").onchange = () => {
+  const v = $("pgSize").value;
+  PAGE = v==="all" ? "all" : +v;
+  try{ localStorage.setItem("pageSize", v); }catch(e){}
+  page = 1; drawDetail();
+};
 document.querySelectorAll("#detail th").forEach(th=>{
   th.dataset.label = th.textContent;
   th.onclick = () => {
@@ -684,6 +706,7 @@ function pageList(p, n){
 }
 function drawPager(pages){
   const el = $("pager");
+  if(pages <= 1){ el.innerHTML = ""; return; }
   let h = `<button class="btn pg" id="prevPg" ${page<=1?"disabled":""} aria-label="이전">‹</button>`;
   h += pageList(page, pages).map(v => v==="…" ? `<span class="ell">…</span>`
     : `<button class="btn pg num" data-pg="${v}" aria-current="${v===page}">${v}</button>`).join("");
@@ -695,12 +718,12 @@ function drawPager(pages){
 }
 function drawDetail(){
   if(!cur) return;
-  const rows = filteredRows(), pages = Math.max(1, Math.ceil(rows.length/PAGE));
+  const rows = filteredRows(), ps = pageSize(rows.length), pages = Math.max(1, Math.ceil(rows.length/ps));
   page = Math.min(page, pages);
-  document.querySelector("#detail tbody").innerHTML = rows.slice((page-1)*PAGE, page*PAGE).map(r=>
-    `<tr><td class="num">${dstr(r.date)}</td>
+  document.querySelector("#detail tbody").innerHTML = rows.slice((page-1)*ps, page*ps).map(r=>
+    `<tr><td class="dt">${dstr(r.date)}</td>
      <td>${chPill(r.channel)}</td>
-     <td>${esc(r.source_medium)}</td><td class="num">${fmt(r.users)}</td></tr>`).join("");
+     <td title="${esc(r.source_medium)}">${esc(r.source_medium)}</td><td class="num">${fmt(r.users)}</td></tr>`).join("");
   $("rowCount").textContent = `${fmt(rows.length)}행`;
   drawPager(pages);
   document.querySelectorAll("#detail th").forEach(th=>{
