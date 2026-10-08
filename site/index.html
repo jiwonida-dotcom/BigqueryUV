@@ -203,6 +203,30 @@ tbody tr:hover{background:var(--hover)}
 input.field{min-width:210px}
 .toolbar .count{color:var(--muted);font-size:12px;margin-left:auto}
 select.field.compact{height:32px;border-radius:9px;font-size:12.5px;color:var(--ink2)}
+/* 다중 선택 드롭다운 */
+.msel{position:relative}
+.msel-btn{display:inline-flex;align-items:center;gap:8px;min-width:150px;cursor:pointer}
+.msel-btn .msel-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.msel-btn .caret{margin-left:auto;color:var(--muted);font-size:10px}
+.msel-btn.on{border-color:var(--brand);background:var(--brand-soft);color:var(--ink);font-weight:600}
+.msel-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:248px;max-width:320px;
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);
+  padding:8px;display:flex;flex-direction:column;gap:6px}
+.msel-pop[hidden]{display:none}
+.msel-pop input.field{min-width:0;width:100%;height:32px;font-size:12.5px}
+.msel-list{overflow:auto;max-height:252px;display:flex;flex-direction:column;gap:1px}
+.msel-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;
+  font-size:13px;color:var(--ink2);user-select:none}
+.msel-opt:hover{background:var(--hover)}
+.msel-opt input{accent-color:var(--brand);width:14px;height:14px;flex:none;margin:0}
+.msel-opt .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msel-opt .n{margin-left:auto;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums;padding-left:10px}
+.msel-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px 0}
+.msel-foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--grid);padding:7px 4px 1px}
+.msel-foot .msel-cnt{color:var(--muted);font-size:11.5px}
+.msel-foot button{margin-left:auto;border:0;background:none;color:var(--brand);font:inherit;font-size:12px;
+  font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px}
+.msel-foot button:hover{background:var(--brand-soft)}
 .table-scroll{overflow-x:auto}
 .pager{display:flex;gap:5px;align-items:center;justify-content:center;margin-top:16px;color:var(--ink2);font-size:13px;flex-wrap:wrap}
 .pager .ell{color:var(--muted);padding:0 2px}
@@ -320,8 +344,9 @@ select.field.compact{height:32px;border-radius:9px;font-size:12.5px;color:var(--
     <section class="card">
       <div class="card-h"><h2>상세 데이터</h2><span class="desc">날짜 × 맞춤채널(운영) × 세션 소스/매체</span></div>
       <div class="toolbar">
-        <select class="field" id="chFilter" aria-label="채널 필터"><option value="">전체 채널</option></select>
-        <input class="field" type="search" id="smSearch" placeholder="소스/매체 검색" aria-label="소스/매체 검색">
+        <select class="field" id="dtFilter" aria-label="날짜 필터"><option value="">전체 날짜</option></select>
+        <div class="msel" id="chSel"></div>
+        <div class="msel" id="smSel"></div>
         <span class="count" id="rowCount"></span>
         <select class="field compact" id="pgSize" aria-label="페이지당 행수">
           <option value="20">20개씩</option><option value="50">50개씩</option>
@@ -387,6 +412,61 @@ $("themeBtn").onclick = () => {
 };
 try{ const t = localStorage.getItem("theme"); if(t) document.documentElement.dataset.theme = t; }catch(e){}
 
+/* ---------- 다중 선택 드롭다운 컴포넌트 ---------- */
+function mkMsel(rootId, cfg){
+  const root = $(rootId);
+  root.innerHTML =
+    `<button type="button" class="field msel-btn" aria-haspopup="listbox" aria-expanded="false">
+       <span class="msel-lbl"></span><span class="caret">▾</span></button>
+     <div class="msel-pop" hidden>
+       ${cfg.searchable ? `<input class="field msel-q" type="search" placeholder="${cfg.searchPlaceholder||"검색"}" aria-label="${cfg.searchPlaceholder||"검색"}">` : ""}
+       <div class="msel-list" role="listbox" aria-multiselectable="true"></div>
+       <div class="msel-foot"><span class="msel-cnt"></span><button type="button" class="msel-clear">초기화</button></div>
+     </div>`;
+  const btn = root.querySelector(".msel-btn"), pop = root.querySelector(".msel-pop"),
+        list = root.querySelector(".msel-list"), qIn = root.querySelector(".msel-q"),
+        cnt = root.querySelector(".msel-cnt"), lbl = root.querySelector(".msel-lbl");
+  let opts = [];                                   // [{v, n(사용자수), dot(색)}]
+  const selected = new Set();
+  let q = "";
+  const label = () => {
+    if(selected.size === 0) lbl.textContent = cfg.placeholder;
+    else if(selected.size === 1) lbl.textContent = [...selected][0];
+    else lbl.textContent = `${[...selected][0]} 외 ${selected.size-1}`;
+    btn.classList.toggle("on", selected.size > 0);
+    cnt.textContent = selected.size ? `${selected.size}개 선택` : "";
+  };
+  const drawList = () => {
+    const ql = q.trim().toLowerCase();
+    const vis = ql ? opts.filter(o=>o.v.toLowerCase().includes(ql)) : opts;
+    list.innerHTML = vis.length ? vis.map(o=>
+      `<label class="msel-opt"><input type="checkbox" value="${esc(o.v)}" ${selected.has(o.v)?"checked":""}>
+       ${o.dot?`<span class="chip" style="background:${o.dot}"></span>`:""}
+       <span class="t" title="${esc(o.v)}">${esc(o.v)}</span><span class="n">${fmt(o.n)}</span></label>`).join("")
+      : `<div class="msel-empty">일치 항목 없음</div>`;
+    list.querySelectorAll("input").forEach(c => c.onchange = () => {
+      c.checked ? selected.add(c.value) : selected.delete(c.value);
+      label(); cfg.onChange();
+    });
+  };
+  const open = o => {
+    if(o) document.querySelectorAll(".msel-pop").forEach(p => { if(p !== pop) p.hidden = true; });
+    pop.hidden = !o; btn.setAttribute("aria-expanded", o); if(o && qIn) qIn.focus();
+  };
+  btn.onclick = () => open(pop.hidden);
+  if(qIn) qIn.oninput = () => { q = qIn.value; drawList(); };
+  root.querySelector(".msel-clear").onclick = () => { selected.clear(); drawList(); label(); cfg.onChange(); };
+  document.addEventListener("pointerdown", e => { if(!root.contains(e.target)) open(false); });
+  root.onkeydown = e => { if(e.key === "Escape") { open(false); btn.focus(); } };
+  label();
+  return {
+    selected,
+    setOptions(list_){ opts = list_; selected.clear(); q = ""; if(qIn) qIn.value = ""; drawList(); label(); },
+    reset(){ selected.clear(); q = ""; if(qIn) qIn.value = ""; drawList(); label(); open(false); }
+  };
+}
+let chSel = null, smSel = null;                    // DOM 준비 후 initDetail 전에 생성
+
 /* ---------- 로드 ---------- */
 async function getMonth(m){
   if(!have.has(m)) return null;
@@ -438,7 +518,7 @@ async function select(m, push){
   cur = data; prev = await getMonth(addMonth(m,-1));
   if(sel!==m) return;
   hidden.clear(); page = 1; sortKey = "date"; sortAsc = true;
-  $("chFilter").value = ""; $("smSearch").value = "";
+  $("dtFilter").value = ""; if(chSel) chSel.reset(); if(smSel) smSel.reset();
   $("notice").hidden = true; $("content").hidden = false; $("csvBtn").disabled = false;
   render(); initDetail();
 }
@@ -662,12 +742,21 @@ function drawChannelTable(){
 
 /* ---------- 상세 테이블 ---------- */
 function initDetail(){
-  $("chFilter").innerHTML = `<option value="">전체 채널</option>` +
-    orderCh(cur.rows.map(r=>r.channel)).map(c=>`<option>${esc(c)}</option>`).join("");
+  if(!chSel){
+    chSel = mkMsel("chSel", {placeholder:"전체 채널", onChange:()=>{page=1; drawDetail();}});
+    smSel = mkMsel("smSel", {placeholder:"전체 소스/매체", searchable:true,
+      searchPlaceholder:"소스/매체 검색", onChange:()=>{page=1; drawDetail();}});
+  }
+  $("dtFilter").innerHTML = `<option value="">전체 날짜</option>` +
+    [...new Set(cur.rows.map(r=>r.date))].sort().map(d=>`<option value="${d}">${dstr(d)}</option>`).join("");
+  const sum = (arr, key) => { const m = new Map();
+    arr.forEach(r=>m.set(r[key], (m.get(r[key])||0) + r.users)); return m; };
+  const chSum = sum(cur.rows, "channel"), smSum = sum(cur.rows, "source_medium");
+  chSel.setOptions(orderCh(cur.rows.map(r=>r.channel)).map(c=>({v:c, n:chSum.get(c), dot:color(c)})));
+  smSel.setOptions([...smSum.entries()].sort((a,b)=>b[1]-a[1]).map(([v,n])=>({v, n})));
   drawDetail();
 }
-$("chFilter").onchange = () => {page=1; drawDetail();};
-$("smSearch").oninput = () => {page=1; drawDetail();};
+$("dtFilter").onchange = () => {page=1; drawDetail();};
 try{ const ps = localStorage.getItem("pageSize");
   if(ps && ["20","50","100","all"].includes(ps)){ PAGE = ps==="all" ? "all" : +ps; $("pgSize").value = ps; } }catch(e){}
 $("pgSize").onchange = () => {
@@ -686,10 +775,11 @@ document.querySelectorAll("#detail th").forEach(th=>{
 });
 
 function filteredRows(){
-  const ch = $("chFilter").value, q = $("smSearch").value.trim().toLowerCase();
+  const dt = $("dtFilter").value;
   let rows = cur.rows;
-  if(ch) rows = rows.filter(r=>r.channel===ch);
-  if(q) rows = rows.filter(r=>r.source_medium.toLowerCase().includes(q));
+  if(dt) rows = rows.filter(r=>r.date===dt);
+  if(chSel && chSel.selected.size) rows = rows.filter(r=>chSel.selected.has(r.channel));
+  if(smSel && smSel.selected.size) rows = rows.filter(r=>smSel.selected.has(r.source_medium));
   return [...rows].sort((a,b)=>{
     const va=a[sortKey], vb=b[sortKey];
     const c = typeof va==="number" ? va-vb : String(va).localeCompare(String(vb),"ko");
@@ -724,7 +814,9 @@ function drawDetail(){
     `<tr><td class="dt">${dstr(r.date)}</td>
      <td>${chPill(r.channel)}</td>
      <td title="${esc(r.source_medium)}">${esc(r.source_medium)}</td><td class="num">${fmt(r.users)}</td></tr>`).join("");
-  $("rowCount").textContent = `${fmt(rows.length)}행`;
+  const dt = $("dtFilter").value;
+  const dayUv = dt ? (cur.by_date.find(r=>r.date===dt)||{}).users : null;
+  $("rowCount").textContent = `${fmt(rows.length)}행` + (dayUv!=null ? ` · ${dstr(dt)} 순 UV ${fmt(dayUv)}` : "");
   drawPager(pages);
   document.querySelectorAll("#detail th").forEach(th=>{
     th.textContent = th.dataset.label + (th.dataset.k===sortKey ? (sortAsc?" ↑":" ↓") : "");
